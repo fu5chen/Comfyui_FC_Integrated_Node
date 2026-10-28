@@ -1,0 +1,48 @@
+FC 节点包 v3
+
+安装：将压缩包内容放入 ComfyUI/custom_nodes/comfyui_image_folder_nodes/，覆盖旧文件。重启 ComfyUI，然后浏览器 Ctrl+F5 刷新。不要同时安装多份插件。
+
+FC Load model：
+- 选择 Krea2 扩散模型和匹配的文本编码器，输出 MODEL / CLIP；VAE 单独加载。
+- 每项 LoRA 只占一行：[LoRA 文件] [M 模型强度] [C CLIP 强度]。
+- 选择 LoRA 自动应用；选择 None 不应用。没有总开关或每项开关。
+- 底部一条 − / + 按钮栏：左侧减少最后一项，右侧新增一项；可减至零项，最多 64 项。
+- 多个 LoRA 按从上到下顺序应用；保存工作流可恢复列表和强度。
+- 旧版配置会迁移，原来的开关设置不再保留，已选 LoRA 会自动生效。
+- weight_dtype 默认 default；clip_device 默认 default，可选 cpu 降低文本编码显存占用。
+- M、C 都为 0 时该项不应用。只有包含文本编码器权重的 LoRA 才会受 C 影响。
+
+保留 FC Load Image、FC Save Image 和 FC Image Compare。
+图片对比使用 1px 分割线、无中间手柄，鼠标左右移动即可对比，双击回到中间。
+
+验证：后端逻辑、紧凑界面增减/强度设置、保存恢复和旧版迁移模拟测试通过。尚未进行实际 ComfyUI 浏览器交互和 Krea2 出图验证。
+
+v4 更新：鼠标停在 FC Image Compare 预览区域时，滚轮传给 ComfyUI 画布，按画布原有设置缩放整个画布；保留鼠标位置、滚动方向和修饰键。需要覆盖 web/compare.js 后 Ctrl+F5 刷新。
+验证：滚轮事件转发与原对比交互的模拟测试通过，尚未在实际 ComfyUI 浏览器验证。
+
+v5 更新：FC_image_Zoom 图片缩放·模型放大
+- 按比例缩放：直接插值缩放，不加载超分模型。scale_by=0.5 缩小一半、2 放大两倍。
+- 模型放大：先用超分模型分块处理，再调整到原图乘 scale_by 的目标尺寸。内置模型原生 4 倍，例如指定 2 倍会在超分后缩到 2 倍。
+- 输出 image / width / height，保持宽高比例（整数像素舍入）；支持批量、RGBA 透明通道。
+- 内置官方轻量通用模型 realesr-general-x4v3.pth，约 4.7 MiB。插件自动注册内置模型目录，不需要搬模型或另装第三方节点。
+- 运行库复用 ComfyUI 的 torch、comfy.utils 和原生超分后端 spandrel；不内嵌重复 Python 库，不自动下载模型或安装依赖。
+- 也可使用 ComfyUI/models/upscale_models 中的其他原生兼容模型。
+- 普通缩放不会增强真实细节；模型放大可能改变纹理。内置模型偏轻量，其他兼容超分模型可自行放入模型目录切换。
+
+中文搜索：
+FC_image_Zoom：图片放大、图像放大、图片缩放、比例缩放、模型放大、超分、缩小。
+FC Load model：模型加载、加载模型、多LoRA。
+FC Load Image：读取图片、加载图片、文件夹图片、顺序读图、批量读图。
+FC Save Image：保存图片、图片保存、导出图片。
+FC Image Compare：图片对比、图像对比、滑动对比、对比图。
+节点显示名也加入中文，便于搜索；内部节点 ID 未更换，已有工作流连线保持兼容。已有节点自定义标题可能需要自行修改。
+
+内置模型来源：https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-x4v3.pth
+项目说明：https://github.com/xinntao/Real-ESRGAN/blob/master/docs/model_zoo.md
+许可证：models/Real-ESRGAN-LICENSE.txt（BSD 3-Clause）
+模型 SHA256：8dc7edb9ac80ccdc30c3a5dca6616509367f05fbc184ad95b731f05bece96292
+验证：实际 torch 比例缩放、批量输入、最小尺寸、缺少模型提示，以及内置 Real-ESRGAN 的 CPU 真实推理、目标倍率、RGBA 与模型缓存均已通过。GPU 和实际浏览器界面未在本次验证。
+
+v6 更新：FC Load model 增加 clip_type（CLIP 类型），直接读取当前 ComfyUI 原生 CLIPLoader 的类型选项。默认 Krea2；使用 MOSS 等模型时，请按原工作流选择对应类型。切换类型会重新加载文本编码器，不重复加载未变化的扩散模型。旧工作流未指定 clip_type 时继续用 krea2。
+支持范围仍为原生 UNETLoader + 单 CLIPLoader，不代表所有类型能共用同一个文本编码器；需要双/多文本编码器或专用加载器的模型仍需对应加载流程。
+验证：类型列表同步、moss_image/flux3 参数透传、切换类型刷新 CLIP 缓存、相同类型复用、原有多 LoRA 界面保存恢复均通过模拟测试；未用各类型真实权重逐一出图。
